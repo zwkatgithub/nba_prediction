@@ -20,7 +20,6 @@ class Mask(object):
         if abs(row[-1]) >= self.yz:
             return 1
         return 0
-            
     def createMask(self):
         self.mask = []
         for colName in OutputData.colName():
