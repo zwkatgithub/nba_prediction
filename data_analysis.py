@@ -1,4 +1,3 @@
-from utils import normalize
 import numpy as np
 import matplotlib.pyplot as plot
 import pandas as pd
@@ -6,6 +5,7 @@ from math import sqrt
 import json
 from write_data import PlayerData,OutputData
 import os
+from utils import normalize
 
 def dataAnalysis(labelIndex,nSteps = 350, stepSize = 0.005,dataFile='./data/processed/data.csv',paramsFolder='./data/processed/'):
     paramsFolder = paramsFolder +str(OutputData.colName()[labelIndex])+'/'+str(nSteps)+'-'+str(stepSize)
@@ -103,6 +103,42 @@ class DataAnalysis(object):
         return self.__dataAnalysis(self.labelindex,self.nSteps,self.stepSize)
     def picture(self):
         self.__dataPlot(self.labelindex,self.nSteps,self.stepSize)
+
+class DataLabel(object):
+    def __init__(self, maskFile,rawDataFile):
+        self.maskFile = maskFile 
+        self.rawDataFile = rawDataFile
+        self.__mask()
+        self.__rawData()
+    def __mask(self):
+        with open(self.maskFile,'r') as f:
+            mask = json.load(f)
+        self.mask = np.array(mask) #
+    def __rawData(self):
+        with open(self.rawDataFile,'r') as f:
+            rawData = [[float(v) for v in line.strip().split(',')] for line in f.read().strip().split('\n')]
+        self.rawData = np.array(rawData)
+    def createData(self):
+        self.inputData = []
+        self.outputData = []
+        data = self.rawData[:,:55]
+        label = self.rawData[:,-9:]
+        data = np.array(data).reshape((-1,5,11))
+        label = np.array(label)
+        for index,row in enumerate(data):
+            for labelIndex in range(len(OutputData.colName())):
+                m = np.sum(self.mask[labelIndex],axis=0)
+                m[m==0] = 1
+                self.inputData.append(np.sum(self.mask[labelIndex]*row,axis=0) * 5 / m)
+                self.outputData.append(label[index])
+        self.inputData = np.array(self.inputData)
+        self.outputData = np.array(self.outputData)
+    def save(self,datafile, labelfile):
+        with open(datafile,'w') as f:
+            json.dump(self.inputData.tolist(),f)
+        with open(labelfile, 'w') as f:
+            json.dump(self.outputData.tolist(), f)
+
     
 if __name__ == '__main__':
     import argparse
