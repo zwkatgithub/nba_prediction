@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 import numpy 
 import pandas
-
 def connDatabase():
     conn = pymysql.connect(host='192.168.0.2',port=3306,user='team1',password='12345qwert')
     cursor = conn.cursor()
@@ -25,19 +24,7 @@ class PlayerData:
     @staticmethod
     def colName():
         return PlayerData.__colName
-class OutputData:
-    __colName = ['oreb','dreb','ast','stl','blk','in_pts','tov','ft','three_pt']
-
-    def __init__(self, data):
-        self.__data = {
-            colName:data.get(colName) for colName in self.__colName
-        }
-    @property
-    def data(self):
-        return self.__data
-    @staticmethod
-    def colName():
-        return OutputData.__colName       
+        
 def getTeamPlayer(cursor, game_id, team_id):
     sql = "SELECT player_id,start_pos FROM box_score WHERE game_id='{0}' and team_id={1} and start_pos!='';".format(game_id, team_id)
     #   print(sql)
@@ -75,10 +62,22 @@ def getPlayerData(cursor,player_id,season):
    
     return PlayerData(data).data
 
+class OutputData:
+    __colName = ['oreb','dreb','ast','stl','blk','in_pts','tov','ft','three_pt']
 
+    def __init__(self, data):
+        self.__data = {
+            colName:data.get(colName) for colName in self.__colName
+        }
+    @property
+    def data(self):
+        return self.__data
+    @staticmethod
+    def colName():
+        return OutputData.__colName
 
 def getOutputData(cursor, game_id, team_id):
-    sql = "SELECT getPlayerData(cursor, player[0],season)oreb,dreb,ast,stl,blk,in_pts, tov,ft,three_pt FROM game_total where game_id='{0}' and team_id={1};".format(game_id,team_id)
+    sql = "SELECT oreb,dreb,ast,stl,blk,in_pts, tov,ft,three_pt FROM game_total where game_id='{0}' and team_id={1};".format(game_id,team_id)
     #print(sql)
     cursor.execute(sql)
     res = cursor.fetchone()
@@ -124,10 +123,10 @@ def processPlayerData(hd,vd):
             res = playerDataMinus(d[0],d[1])
             data += res
     return data
-def processLabel(hl,vl):
+def processLabel(l):
     data = []
     for colName in OutputData.colName():
-        data.append(hl[colName]-vl[colName])
+        data.append(l[colName])
     return data
 
 def write_data():
@@ -150,10 +149,10 @@ def write_data():
             hd, vd = d
             hl, vl = l
             hdp = processPlayerData(hd,vd)
-            hlp = processLabel(hl,vl)
+            hlp = processLabel(hl)
             res.append(str(hdp+hlp)[1:-1])
             vdp = processPlayerData(vd,hd)
-            vlp = processLabel(vl,hl)
+            vlp = processLabel(vl)
             res.append(str(vdp+vlp)[1:-1])
     with open(processedDataFolder,'w') as f:
         #print(data[0])
@@ -181,10 +180,9 @@ def normalize():
     dl = pandas.read_csv(processedDataFolder)
     data = dl.iloc[:,:-9].as_matrix()
     label = dl.iloc[:,-9:].as_matrix()
-    data_mean = data.mean(axis=0)
-    (data-data_mean) / data.std(axis=0)
-
+    norm_data = (data - data.mean(axis=0))/data.std(axis=0)
     
+        
 
 if __name__ == '__main__':
     # import argparse

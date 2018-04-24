@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import numpy as np
 from data_analysis import OutputData
+from mxnet import gluon
 dataFolder = './data/processed/data.csv'
 
 
@@ -9,20 +10,23 @@ def normalize(data):
     mean = data.mean(axis=0)
     return (data - mean) / data.std(axis=0)
     
-            
+def selectLoss(lossname):
+    if lossname == 'l2loss':
+        return gluon.loss.L2Loss()    
     
 def read_data(dataFile):
     with open(dataFile,'r') as f:
         data = json.load(f)
     return np.array(data)
-def loadDataLabel():
-    data = normalize(read_data('./data/datalabel/data.txt'))
+def loadDataLabel(labelName):
+    labelIndex = OutputData.colName().index(labelName)
+    data = normalize(read_data('./data/datalabel/{0}.txt'.format(labelName)))
     label = read_data('./data/datalabel/label.txt')
     train_num = int(len(data) * 0.7)
     train_data = data[:train_num,:]
-    train_label = label[:train_num,:]
+    train_label = label[:train_num,labelIndex]
     test_data = data[train_num:,:]
-    test_label = data[train_num:,:]
+    test_label = data[train_num:,labelIndex]
     return train_data, train_label, test_data, test_label
 
 
@@ -44,7 +48,7 @@ class DataLoader(object):
 
 
 if __name__ == '__main__':
-    train_data, train_label, test_data, test_label = loadDataLabel()
+    train_data, train_label, test_data, test_label = loadDataLabel('three_pt')
     dataLoader = DataLoader(train_data, train_label)
     for data, label in dataLoader.dataIter(128):
         print (data ,label)

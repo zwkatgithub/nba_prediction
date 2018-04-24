@@ -118,27 +118,25 @@ class DataLabel(object):
         with open(self.rawDataFile,'r') as f:
             rawData = [[float(v) for v in line.strip().split(',')] for line in f.read().strip().split('\n')]
         self.rawData = np.array(rawData)
-    def createData(self):
-        self.inputData = []
-        self.outputData = []
-        data = self.rawData[:,:55]
+        self.data = self.rawData[:,:55]
+    def saveLabel(self, labelFile):
         label = self.rawData[:,-9:]
-        data = np.array(data).reshape((-1,5,11))
-        label = np.array(label)
-        for index,row in enumerate(data):
-            for labelIndex in range(len(OutputData.colName())):
-                m = np.sum(self.mask[labelIndex],axis=0)
-                m[m==0] = 1
-                self.inputData.append(np.sum(self.mask[labelIndex]*row,axis=0) * 5 / m)
-                self.outputData.append(label[index])
-        self.inputData = np.array(self.inputData)
-        self.outputData = np.array(self.outputData)
-    def save(self,datafile, labelfile):
+        with open(labelFile,'w') as f:
+            json.dump(label.tolist(),f)
+    def createData(self, labelName):
+        inputData = []
+        labelIndex = OutputData.colName().index(labelName)
+        data = self.data.reshape((-1,5,11))
+        for row in data:
+            m = np.sum(self.mask[labelIndex],axis=0)
+            n = np.sum(row*self.mask[labelIndex],axis=0)
+            inputData.append(n[m!=0]/m[m!=0])
+        self.inputData = np.array(inputData)
+    def save(self,datafile):
+        if not os.path.exists(os.path.dirname(datafile)):
+            os.makedirs(os.path.dirname(datafile))
         with open(datafile,'w') as f:
             json.dump(self.inputData.tolist(),f)
-        with open(labelfile, 'w') as f:
-            json.dump(self.outputData.tolist(), f)
-
     
 if __name__ == '__main__':
     import argparse
