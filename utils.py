@@ -2,31 +2,43 @@ import pandas as pd
 import json
 import numpy as np
 from data_analysis import OutputData
-from mxnet import gluon
+from mxnet import gluon, nd
 dataFolder = './data/processed/data.csv'
 
 
 def normalize(data):
     mean = data.mean(axis=0)
     return (data - mean) / data.std(axis=0)
-    
+def mse(output, label):
+    return nd.sum((output-label)**2) / len(output)
 def selectLoss(lossname):
     if lossname == 'l2loss':
         return gluon.loss.L2Loss()    
+    elif lossname =='mse':
+        return mse
+    elif lossname =='log':
+        return gluon.loss.LogisticLoss()
     
 def read_data(dataFile):
     with open(dataFile,'r') as f:
         data = json.load(f)
     return np.array(data)
-def loadDataLabel(labelName):
+def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False):
     labelIndex = OutputData.colName().index(labelName)
     data = normalize(read_data('./data/datalabel/{0}.txt'.format(labelName)))
     label = read_data('./data/datalabel/label.txt')
-    train_num = int(len(data) * 0.7)
-    train_data = data[:train_num,:]
-    train_label = label[:train_num,labelIndex]
-    test_data = data[train_num:,:]
-    test_label = data[train_num:,labelIndex]
+    if all:
+        rate = 1.0
+    train_num = int(len(data) * rate)
+    indexs = list(range(0,len(data)))
+    if shuffle:
+        np.random.shuffle(indexs)
+    train_index = indexs[:train_num]
+    test_index = indexs[train_num:]
+    train_data = data[train_index,:]
+    train_label = label[train_index,labelIndex]
+    test_data = data[test_index,:]
+    test_label = label[test_index,labelIndex]
     return train_data, train_label, test_data, test_label
 
 

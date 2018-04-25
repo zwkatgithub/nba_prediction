@@ -133,7 +133,7 @@ def write_data():
     res = []
     # colName = PlayerData.colName()+OutputData.colName()
     # res.append(str(colName).replace('\'','')[1:-1])
-    for season in [str(n) for n in range(7,17)]:
+    for season in [str(n) for n in range(16,6,-1)]:
         with open(dataFolder.format(season),'r') as f:
             data = json.load(f)
         with open(labelFolder.format(season),'r') as f:

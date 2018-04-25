@@ -1,30 +1,48 @@
 from models import MLP
 from data_analysis import OutputData
-from utils import DataLoader, loadDataLabel
+from utils import DataLoader, loadDataLabel, mse
 import mxnet as mx
 from mxnet import nd, gluon, autograd
 import os
+import matplotlib.pyplot as plt
+import signal
 
+def sigint_handler(signum, frame):
+    global is_sigint_up
+    is_sigint_up = True
+
+signal.signal(signal.SIGINT, sigint_handler)
+signal.signal(signal.SIGHUP, sigint_handler)
+signal.signal(signal.SIGTERM, sigint_handler)
+is_sigint_up = False
 
 class MLPTrainer(object):
     paramsFloder = './params/MLP'
-    def __init__(self,labelName, loss, lr):
+    def __init__(self,labelName, loss, lr,wd, all=False):
+        self.all = all
         self.labelName = labelName
         self.labelIndex = OutputData.colName().index(labelName)
-        self.train_data, self.train_label, self.test_data, self.test_label = [nd.array(y) for y in loadDataLabel(self.labelName)]
+        self.train_data, self.train_label, self.test_data, self.test_label = \
+            [nd.array(y) for y in loadDataLabel(self.labelName,all=all,shuffle=False)]
         self.dataLoader = DataLoader(self.train_data,self.train_label)
         self.loss = loss #gluon.loss.LogisticLoss()
         self.net = MLP()
         self.lr = lr
-        self.net.initialize()
+        self.wd = wd
+        self.net.collect_params().initialize(mx.init.Xavier(magnitude=2.24),ctx=mx.cpu())
         self.trainer = gluon.Trainer(self.net.collect_params(),
             'adam',
-            {'learning_rate':self.lr})
+            {'learning_rate':self.lr,
+            'wd':self.wd})
     def train(self,epochs,batch_size, con=False,ctx=None):
+        self.train_loss = []
+        self.test_loss = []
         if con:
             self.load(ctx=ctx)
         for epoch in range(epochs):
             train_loss = 0.0
+            if is_sigint_up:
+                break
             for data, label in self.dataLoader.dataIter(batch_size):
                 with autograd.record():
                     output = self.net(data)
@@ -33,14 +51,31 @@ class MLPTrainer(object):
                 self.trainer.step(batch_size)
 
                 train_loss += nd.sum(lossv).asscalar()
-            print('Epoch %d : Train loss - %f' % (epoch, train_loss / len(self.train_data)))
-        #self.save()
-    def eval(self):
-        test_data = nd.array(self.test_data)
-        test_label = nd.array(self.test_label)
-        output = self.net(test_data)
+            ptrain_loss = self.eval(self.train_data,self.train_label)
+            ptest_loss = self.eval(self.test_data, self.test_label)
+            self.test_loss.append(ptest_loss / len(self.test_data))
+            self.train_loss.append(ptrain_loss / len(self.train_data))
+            print('Epoch %d : Train loss -> %f Test loss -> %f ' % (epoch, self.train_loss[-1], self.test_loss[-1]))
+        p = input('plot ? (y/n)')
+        if p.lower() == 'y':
+            self.plot()
+        r = input('save params ? (y/n)')
+        if r.lower() == 'y':
+            self.save()
+    def plot(self):
+        plt.figure(figsize=(8,6))
+        plt.plot(self.train_loss)
+        plt.plot(self.test_loss)
+        plt.legend(['train','test'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss Value')
+        plt.show()
+    def eval(self, data, label):
+        data = nd.array(data)
+        label = nd.array(label)
         #print(output[:,0]-test_label)
-        loss = nd.sum(output.reshape(test_label.shape) - test_label).asscalar()
+        output = self.net(data)
+        loss = nd.sum((output.reshape(label.shape) - label)**2).asscalar()/2
         return loss
     def predict(self, x):
         x = nd.array(x)
@@ -55,6 +90,9 @@ class MLPTrainer(object):
         paramsFile = os.path.join(self.paramsFloder,name)
         self.net.load_params(paramsFile,ctx)
 
+class CMLPTrainer(object):
+    def __init__(self):
+        pass
 
 
 if __name__=='__main__':
@@ -67,9 +105,9 @@ if __name__=='__main__':
     # parser.add_argument('-c','--con',type=bool,default=False)
     # args = parser.parse_args()
 
-    # three_pt = MLPTrainer(args.labelname, gluon.loss.L2Loss(),args.learningrate)
-    # three_pt.train(1000,256,con=args.con,ctx=mx.cpu())
-    # print('Test Loss : ',three_pt.eval())
+    three_pt = MLPTrainer('three_pt', gluon.loss.LogisticLoss(),0.001)
+    three_pt.train(1000,256)
+    print('Test Loss : ',three_pt.eval())
     # r = input('save params ? (y/n)')
     # if r.lower() == 'y':
     #     three_pt.save()
