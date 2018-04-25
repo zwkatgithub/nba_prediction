@@ -1,6 +1,6 @@
 import json
 from trainers import MLPTrainer, mx, OutputData, nd
-from utils import selectLoss, 
+from utils import selectLoss
 
 with open('./config.ini','r') as f:
     config = json.load(f)
@@ -11,34 +11,34 @@ class Predicter(object):
         self.trainers = {}
         for labelName in self.labelNames:
             self.trainers[labelName] = MLPTrainer(labelName,
-                selectLoss(config[labelName].lossfunction),
-                config[labelName].learning_rate)
+                selectLoss(config[labelName]['lossfunction']),
+                config[labelName]['learning_rate'])
+        self.load()
     def load(self):
-        for trainer in self.trainers:
+        for _, trainer in self.trainers.items():
             trainer.load(mx.cpu())
-    def winOrLoss(self,label):
-        a = OutputData.colName().index('three_pt')
-        b = OutputData.colName().index('in_pts')
-        c = OutputData.colName().index('ft')
-        res = label[:,a]*3 + label[:,b] + label[:,c]
+    def winOrLoss(self):
+        res = self.trainers['three_pt'].train_label*3 + self.trainers['in_pts'].train_label + self.trainers['ft'].train_label
         return res>0
-    def predict(self, data, label):
-        label = self.winOrLoss(nd.array(label))
-        tp = self.trainers['three_pt'].predict(data).reshape(label.shape) * 3
-        ip = self.trainers['in_pts'].net(data).reshape(label.shape)
-        fp = self.trainers['ft'].net(data).reshape(label.shape)
+    def predict(self):
+        label = self.winOrLoss()
+        tp = self.trainers['three_pt'].predict(self.trainers['three_pt'].train_data).reshape(label.shape) * 3
+        ip = self.trainers['in_pts'].predict(self.trainers['in_pts'].train_data).reshape(label.shape)
+        fp = self.trainers['ft'].predict(self.trainers['ft'].train_data).reshape(label.shape)
         r = tp+ip+fp
         r = r > 0
         res = r == label
         w = nd.sum(nd.cast(res,'int32'))
         print(w)
-        print(w.asscalar() / len(res))
+        #print(w.asscalar() / len(res))
         return w.asscalar() / len(res)
 
 if __name__ == '__main__':
     predicter = Predicter(config)
+
     
-    predicter.predict
+    pre = predicter.predict()
+    print(pre)
 
 
 
