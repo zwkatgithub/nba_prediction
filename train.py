@@ -19,6 +19,8 @@ args = parser.parse_args()
 lr = config[args.labelname]['learningrate']
 lossfunc = config[args.labelname]['lossfunction']
 wd = config[args.labelname]['wd']
+dropout = config[args.labelname]['dropout']
+bn = config[args.labelname]['bn']
 
-trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),lr,wd,all=args.all)
+trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),lr,wd,bn=bn,dropout=dropout,all=args.all)
 trainer.train(args.epoch,args.batchsize,con=args.con,ctx=mx.cpu())

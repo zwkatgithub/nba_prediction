@@ -5,7 +5,7 @@ from math import sqrt
 import json
 from write_data import PlayerData,OutputData
 import os
-from utils import normalize
+from utils import normalize, genDictIndex
 
 def dataAnalysis(labelIndex,nSteps = 350, stepSize = 0.005,dataFile='./data/processed/data.csv',paramsFolder='./data/processed/'):
     paramsFolder = paramsFolder +str(OutputData.colName()[labelIndex])+'/'+str(nSteps)+'-'+str(stepSize)
@@ -128,32 +128,36 @@ class DataLabel(object):
         labelIndex = OutputData.colName().index(labelName)
         data = self.data.reshape((-1,5,11))
         for row in data:
-            m = np.sum(self.mask[labelIndex],axis=0)
-            n = np.sum(row*self.mask[labelIndex],axis=0)
-            inputData.append(n[m!=0]/m[m!=0])
+            #m = np.sum(self.mask[labelIndex],axis=0)
+            m = self.mask[labelIndex]
+            r = row[m!=0].reshape((-1,))
+            
+            inputData.append(r.tolist())
         self.inputData = np.array(inputData)
     def save(self,datafile):
         if not os.path.exists(os.path.dirname(datafile)):
             os.makedirs(os.path.dirname(datafile))
         with open(datafile,'w') as f:
+            #print(type(self.inputData.tolist()[0]))
             json.dump(self.inputData.tolist(),f)
     
 if __name__ == '__main__':
-    import argparse
+    # import argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a','--analysis',type=bool,default=False)
-    parser.add_argument('-ns','--nsteps',type=int,default=350)
-    #parser.add_argument('-f','--file',type=str,default='./data/processed/data.csv')
-    parser.add_argument('-ss','--stepsize',type=float,default=0.005)
-    #parser.add_argument('-pf','--paramsfile',type=str,default='data.txt')
-    parser.add_argument('labelindex',type=int)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('-a','--analysis',type=bool,default=False)
+    # parser.add_argument('-ns','--nsteps',type=int,default=350)
+    # #parser.add_argument('-f','--file',type=str,default='./data/processed/data.csv')
+    # parser.add_argument('-ss','--stepsize',type=float,default=0.005)
+    # #parser.add_argument('-pf','--paramsfile',type=str,default='data.txt')
+    # parser.add_argument('labelindex',type=int)
 
-    args = parser.parse_args()
-    #print(args)
-    if args.analysis:
-        dataAnalysis(args.labelindex,args.nsteps,args.stepsize,)
-    else:
-        dataPlot(args.labelindex,args.nsteps,args.stepsize)
+    # args = parser.parse_args()
+    # #print(args)
+    # if args.analysis:
+    #     dataAnalysis(args.labelindex,args.nsteps,args.stepsize,)
+    # else:
+    #     dataPlot(args.labelindex,args.nsteps,args.stepsize)
+    DataLabel('./data/processed/mask.txt','./data/processed/data.csv')
 
 

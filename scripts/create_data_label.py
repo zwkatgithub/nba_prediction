@@ -16,6 +16,6 @@ class CreateDataLabel(object):
 
 if __name__ == '__main__':
     for labelName in OutputData.colName():
-        CreateDataLabel(labelName,datafile='./data/datalabel/'+labelName+'.txt').run()
+        CreateDataLabel(labelName,datafile='./data/datalabel/CMLP/'+labelName+'.txt').run()
 
 

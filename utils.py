@@ -1,14 +1,18 @@
 import pandas as pd
 import json
 import numpy as np
-from data_analysis import OutputData
+from collections import defaultdict
+
 from mxnet import gluon, nd
 dataFolder = './data/processed/data.csv'
 
 
 def normalize(data):
+    #data += 1e-5
+    print(data.shape)
     mean = data.mean(axis=0)
     return (data - mean) / data.std(axis=0)
+
 def mse(output, label):
     return nd.sum((output-label)**2) / len(output)
 def selectLoss(lossname):
@@ -18,15 +22,32 @@ def selectLoss(lossname):
         return mse
     elif lossname =='log':
         return gluon.loss.LogisticLoss()
-    
+
+def genDictIndex(label):
+    d = defaultdict(lambda : 0)
+    for l in label:
+        d[l] += 1
+    res = {}
+    i = []
+    for key,v in d.items():
+        res[key]= len(i)
+        i.append(key)
+    return res, i
+from data_analysis import OutputData
 def read_data(dataFile):
     with open(dataFile,'r') as f:
         data = json.load(f)
     return np.array(data)
-def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False):
+def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
+    dataFile = './data/datalabel/{0}.txt'
+    labelFile = './data/datalabel/label.txt'
+    if CMLP:
+        dataFile = './data/datalabel/CMLP/{0}.txt'
+        labelFile = './data/datalabel/CMLP/label.txt'
     labelIndex = OutputData.colName().index(labelName)
-    data = normalize(read_data('./data/datalabel/{0}.txt'.format(labelName)))
-    label = read_data('./data/datalabel/label.txt')
+    data = normalize(read_data(dataFile.format(labelName)))
+    print('Done')
+    label = read_data(labelFile)
     if all:
         rate = 1.0
     train_num = int(len(data) * rate)
@@ -55,7 +76,7 @@ class DataLoader(object):
         for epoch in range(epochs):
             cur_indexs = indexs[epoch*batch_size:min((epoch+1)*batch_size, len(indexs))]
             yield self.data[cur_indexs,:], self.label[cur_indexs]
-    
+   
         
 
 

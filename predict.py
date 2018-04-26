@@ -14,11 +14,14 @@ class Predicter(object):
             self.trainers[labelName] = MLPTrainer(labelName,
                 selectLoss(config[labelName]['lossfunction']),
                 config[labelName]['learningrate'],
-                config[labelName]['wd'],all=self.all)
+                config[labelName]['wd'],bn=config[labelName]['bn'],
+                dropout=config[labelName]['dropout'],all=self.all)
+        # for _, trainer in self.trainers.items():
+        #     print(trainer.net.collect_params())
         self.load()
     def load(self):
         for _, trainer in self.trainers.items():
-            print(_)
+            #print(_)
             trainer.load(mx.cpu())
     def winOrLoss(self, which):
         # res = self.trainers['three_pt'].train_label*3 + self.trainers['in_pts'].train_label + self.trainers['ft'].train_label
