@@ -1,6 +1,6 @@
-from trainers import MLPTrainer, mx
+from trainers import MLPTrainer, mx, nd
 import argparse
-from utils import selectLoss
+from utils import selectLoss, loadDataLabel
 import json
 
 with open('./config.ini', 'r') as f:
@@ -21,6 +21,8 @@ lossfunc = config[args.labelname]['lossfunction']
 wd = config[args.labelname]['wd']
 dropout = config[args.labelname]['dropout']
 bn = config[args.labelname]['bn']
-
-trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),lr,wd,bn=bn,dropout=dropout,all=args.all)
+a,b,c,d = loadDataLabel(args.labelname)
+trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),bn=bn,dropout=dropout,all=args.all)
+trainer.initnet(lr,wd)
+trainer.dataload(nd.array(a),nd.array(b),nd.array(c),nd.array(d))
 trainer.train(args.epoch,args.batchsize,con=args.con,ctx=mx.cpu())

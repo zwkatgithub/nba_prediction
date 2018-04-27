@@ -26,30 +26,26 @@ class Predicter(object):
     def winOrLoss(self, which):
         # res = self.trainers['three_pt'].train_label*3 + self.trainers['in_pts'].train_label + self.trainers['ft'].train_label
         # return res>0
-        if which == 'train':
-            temp = nd.zeros(self.trainers['three_pt'].train_label.shape)
-        elif which == 'test':
-            temp = nd.zeros(self.trainers['three_pt'].test_label.shape)
-        for _,trainer in self.trainers.items():
-            data = getattr(trainer,which+'_label')
-            if _ == 'three_pt':
-                data *= 3
-            temp += data
-        return temp > 0
+        # if which == 'train':
+        #     temp = nd.zeros(self.trainers['three_pt'].train_label.shape)
+        # elif which == 'test':
+        #     temp = nd.zeros(self.trainers['three_pt'].test_label.shape)
+
+        return self.trainers['three_pt'].train_label
+        #label = getattr(trainer,which+'_label')
+        
     def predict(self,which='train'):
-        label = self.winOrLoss(which)
+        label = getattr(self.trainers['three_pt'],'{0}_label'.format(which))
+        print('label shape : ',label.shape)
         temp = nd.zeros(label.shape)
         for _,trainer in self.trainers.items():
-            data = trainer.predict(getattr(trainer,which+'_data')).reshape(label.shape)
-            if _ == 'three_pt':
-                data *= 3
-            temp += data
-        # tp = self.trainers['three_pt'].predict(self.trainers['three_pt'].train_data).reshape(label.shape) * 3
-        # ip = self.trainers['in_pts'].predict(self.trainers['in_pts'].train_data).reshape(label.shape)
-        # fp = self.trainers['ft'].predict(self.trainers['ft'].train_data).reshape(label.shape)
-        #r = tp+ip+fp
-        r = temp > 0
+            temp += trainer.predict(getattr(trainer,which+'_data'))
+        
+
+        r = temp > 0.5 #nd.cast(temp == 1,'float32')+ nd.cast(temp == 2,'float32')+nd.cast(temp == 3,'float32')
         res = r == label
+        with open('r.txt','w') as f:
+            f.write(str(res.asnumpy().tolist()))
         w = nd.sum(nd.cast(res,'int32'))
         print(w.asscalar())
         print(len(res))

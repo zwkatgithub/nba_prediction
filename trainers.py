@@ -1,4 +1,4 @@
-from models import MLP, CMLP
+from models import MLP, CMLP, SampleMLP
 from data_analysis import OutputData
 from utils import DataLoader, loadDataLabel, mse, genDictIndex
 import mxnet as mx
@@ -18,25 +18,31 @@ is_sigint_up = False
 
 class MLPTrainer(object):
     paramsFloder = './params/MLP'
-    def __init__(self,labelName, loss, lr,wd, bn=False, dropout=None, all=False):
+    def __init__(self,labelName, loss, bn=False, dropout=None, all=False):
         self.all = all
         self.labelName = labelName
         self.labelIndex = OutputData.colName().index(labelName)
-        self.train_data, self.train_label, self.test_data, self.test_label = \
-            [nd.array(y) for y in loadDataLabel(self.labelName,all=all,shuffle=False,CMLP=True)]
-        self.dataLoader = DataLoader(self.train_data,self.train_label)
-        self.loss = loss #gluon.loss.LogisticLoss()
         self.bn = bn
         self.dropout = dropout
-        self.net = MLP(bn,dropout)
+        self.net = SampleMLP(bn,dropout)
+    def initnet(self,lr,wd,opt='adam',init='x'):
         self.lr = lr
         self.wd = wd
-        self.net.initialize()
-        #self.net.collect_params().initialize(mx.init.Xavier(magnitude=2.24),ctx=mx.cpu())
+        if init == 'x':
+            self.net.collect_params().initialize(mx.init.Xavier(),force_reinit=True)
+        else:
+            self.net.initialize(force_reinit=True)
+        
         self.trainer = gluon.Trainer(self.net.collect_params(),
-            'adam',
-            {'learning_rate':self.lr,
-            'wd':self.wd})
+        opt,
+        {'learning_rate':self.lr,
+        'wd':self.wd})  
+    def dataload(self,train_data, train_label, test_data, test_label):
+        self.train_data = train_data
+        self.train_label = train_label
+        self.test_data = test_data
+        self.test_label = test_label
+        self.dataLoader = DataLoader(self.train_data, self.train_label)
     def train(self,epochs,batch_size, con=False,ctx=None):
         self.train_loss = []
         self.test_loss = []
@@ -48,6 +54,7 @@ class MLPTrainer(object):
                 break
             for data, label in self.dataLoader.dataIter(batch_size):
                 with autograd.record():
+                    #print(data.shape,label.shape)
                     output = self.net(data)
                     lossv = self.loss(output,label)
                 lossv.backward()
@@ -58,7 +65,12 @@ class MLPTrainer(object):
             ptest_loss = self.eval(self.test_data, self.test_label)
             self.test_loss.append(ptest_loss / len(self.test_data))
             self.train_loss.append(ptrain_loss / len(self.train_data))
-            print('Epoch %d : Train loss -> %f Test loss -> %f ' % (epoch, self.train_loss[-1], self.test_loss[-1]))
+            train_acc = self.accuracy(self.train_data,self.train_label)
+            test_acc = self.accuracy(self.test_data, self.test_label)
+            # train_acc = 0.0
+            # test_acc = 0.0
+            print('Epoch %d : Train loss -> %f Test loss -> %f Train acc -> %f Test acc -> %f' % (epoch, self.train_loss[-1], self.test_loss[-1],
+                train_acc, test_acc))
         p = input('plot ? (y/n)')
         if p.lower() == 'y':
             self.plot()
@@ -78,12 +90,13 @@ class MLPTrainer(object):
         label = nd.array(label)
         #print(output[:,0]-test_label)
         output = self.net(data)
-        loss = nd.sum(nd.abs(output.reshape(label.shape) - label)).asscalar()
-        return loss
+        return nd.sum(self.loss(output,label)).asscalar()
+        #loss = nd.sqrt(2*nd.sum(nd.power(output.reshape(label.shape) - label,2))).asscalar()
+        #return loss
     def predict(self, x):
         x = nd.array(x)
         l = self.net(x)
-        return l
+        return l.argmax(axis=1)
     def save(self):
         name = self.labelName+str(self.lr)+'.txt'
         paramsFile = os.path.join(self.paramsFloder,name)
@@ -92,6 +105,10 @@ class MLPTrainer(object):
         name = self.labelName+str(self.lr)+'.txt'
         paramsFile = os.path.join(self.paramsFloder,name)
         self.net.load_params(paramsFile,ctx)
+    def accuracy(self, data, label):
+        output = self.net(data)
+        #print(output.argmax(axis=1))
+        return nd.mean(output.argmax(axis=1)==label).asscalar()
 
 class CMLPTrainer(object):
     def __init__(self,labelName, loss, lr,wd, dictindex,bn=False, dropout=None, all=False):
@@ -146,7 +163,7 @@ if __name__=='__main__':
     # args = parser.parse_args()
     train_data, train_label,_,_ = loadDataLabel('three_pt',all=True)
     print('Start')
-    three_pt = CMLPTrainer('three_pt',gluon.loss.SoftmaxCrossEntropyLoss(),0.00001,0.001,genDictIndex(train_label))
+    three_pt = CMLPTrainer('three_pt',gluon.loss.SoftmaxCrossEntropyLoss(),0.1,0.005,genDictIndex(train_label))
     three_pt.train(1000,256)
     
     # r = input('save params ? (y/n)')

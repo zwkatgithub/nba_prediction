@@ -139,8 +139,7 @@ class DataLabel(object):
             os.makedirs(os.path.dirname(datafile))
         with open(datafile,'w') as f:
             #print(type(self.inputData.tolist()[0]))
-            json.dump(self.inputData.tolist(),f)
-    
+            json.dump(self.inputData.tolist(),f) 
 if __name__ == '__main__':
     # import argparse
 
