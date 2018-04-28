@@ -73,5 +73,7 @@ class CMLP(MLP):
         
         return o
 
+class RNN():
+    pass
 
             

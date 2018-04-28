@@ -70,7 +70,7 @@ def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
     if CMLP:
         dataFile = './data/datalabel/CMLP/{0}.txt'
         labelFile = './data/datalabel/CMLP/label.txt'
-    data = read_data(dataFile.format(labelName))
+    data,_ = pca(normalize(read_data(dataFile.format(labelName))))
     label = read_data(labelFile)
     label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
     label = label > 0
@@ -82,24 +82,27 @@ def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
         np.random.shuffle(indexs)
     train_index = indexs[:train_num]
     test_index = indexs[train_num:]
-    train_data,_ = pca(normalize(data[train_index,:]))
+    train_data = data[train_index,:]
     train_label = label[train_index]
-    test_data,_ = pca(normalize(data[test_index,:]))
+    test_data = data[test_index,:]
     test_label = label[test_index]
     return train_data, train_label, test_data, test_label
 def loadDataLabel2(rate = 0.8):
     rawdatafile = './data/processed/data.csv'
     with open(rawdatafile,'r') as f:
         rawdata = np.array([[float(a) for a in r.split(',')] for r in f.read().split('\n')])
-    data = rawdata[:,:55]
+    data,_ = pca(normalize(rawdata[:,:55]))
     label = rawdata[:,55:]
     label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
     label = label > 0
+    print(rate)
+    #print(label.shape[0]*rate)
     train_num = int(rawdata.shape[0] * rate)
+    #print(data[train_num:,:].shape)
     train_data, train_label = data[:train_num,:], label[:train_num]
     test_data, test_label = data[train_num:,:], label[train_num:]
-    train_data, _ = pca(normalize(train_data))
-    test_data, _ = pca(normalize(test_data))
+    #train_data, _ = pca(normalize(train_data))
+    #test_data, _ = pca(normalize(test_data))
     return train_data, train_label, test_data, test_label
 
 
