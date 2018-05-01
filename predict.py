@@ -1,6 +1,6 @@
 import json
 from trainers import MLPTrainer, mx, OutputData, nd
-from utils import selectLoss
+from utils import selectLoss, loadDataLabel2, loadDataLabel
 
 with open('./config.ini','r') as f:
     config = json.load(f)
@@ -13,43 +13,34 @@ class Predicter(object):
         for labelName in self.labelNames:
             self.trainers[labelName] = MLPTrainer(labelName,
                 selectLoss(config[labelName]['lossfunction']),
-                config[labelName]['learningrate'],
-                config[labelName]['wd'],bn=config[labelName]['bn'],
+                bn=config[labelName]['bn'],
                 dropout=config[labelName]['dropout'],all=self.all)
-        # for _, trainer in self.trainers.items():
-        #     print(trainer.net.collect_params())
+            self.trainers[labelName].initnet(config[labelName]['learningrate'],config[labelName]['wd'])
+            self.trainers[labelName].dataload(*[nd.array(v) for v in loadDataLabel(labelName,CMLP=True)])
+            print(self.trainers[labelName].train_data.shape)
         self.load()
     def load(self):
         for _, trainer in self.trainers.items():
             #print(_)
             trainer.load(mx.cpu())
     def winOrLoss(self, which):
-        # res = self.trainers['three_pt'].train_label*3 + self.trainers['in_pts'].train_label + self.trainers['ft'].train_label
-        # return res>0
-        if which == 'train':
-            temp = nd.zeros(self.trainers['three_pt'].train_label.shape)
-        elif which == 'test':
-            temp = nd.zeros(self.trainers['three_pt'].test_label.shape)
-        for _,trainer in self.trainers.items():
-            data = getattr(trainer,which+'_label')
-            if _ == 'three_pt':
-                data *= 3
-            temp += data
-        return temp > 0
+        return self.trainers['three_pt'].train_label
+        #label = getattr(trainer,which+'_label')
+        
     def predict(self,which='train'):
-        label = self.winOrLoss(which)
+        label = getattr(self.trainers['three_pt'],'{0}_label'.format(which))
+        print('label shape : ',label.shape)
         temp = nd.zeros(label.shape)
         for _,trainer in self.trainers.items():
-            data = trainer.predict(getattr(trainer,which+'_data')).reshape(label.shape)
-            if _ == 'three_pt':
-                data *= 3
-            temp += data
-        # tp = self.trainers['three_pt'].predict(self.trainers['three_pt'].train_data).reshape(label.shape) * 3
-        # ip = self.trainers['in_pts'].predict(self.trainers['in_pts'].train_data).reshape(label.shape)
-        # fp = self.trainers['ft'].predict(self.trainers['ft'].train_data).reshape(label.shape)
-        #r = tp+ip+fp
-        r = temp > 0
+            print(_+' data shape : ',getattr(trainer,which+'_data').shape)
+            temp += trainer.predict(getattr(trainer,which+'_data'))
+            
+        
+
+        r = temp > 0.5 #nd.cast(temp == 1,'float32')+ nd.cast(temp == 2,'float32')+nd.cast(temp == 3,'float32')
         res = r == label
+        with open('r.txt','w') as f:
+            f.write(str(res.asnumpy().tolist()))
         w = nd.sum(nd.cast(res,'int32'))
         print(w.asscalar())
         print(len(res))
