@@ -45,7 +45,7 @@ def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
         dataFile = './data/datalabel/CMLP/{0}.txt'
         labelFile = './data/datalabel/CMLP/label.txt'
     labelIndex = OutputData.colName().index(labelName)
-    data = normalize(read_data(dataFile.format(labelName)))
+    data = read_data(dataFile.format(labelName))
     print('Done')
     label = read_data(labelFile)
     if all:
@@ -56,9 +56,9 @@ def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
         np.random.shuffle(indexs)
     train_index = indexs[:train_num]
     test_index = indexs[train_num:]
-    train_data = data[train_index,:]
+    train_data = normalize(data[train_index,:])
     train_label = label[train_index,labelIndex]
-    test_data = data[test_index,:]
+    test_data = normalize(data[test_index,:])
     test_label = label[test_index,labelIndex]
     return train_data, train_label, test_data, test_label
 

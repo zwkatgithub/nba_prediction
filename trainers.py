@@ -10,9 +10,7 @@ import signal
 def sigint_handler(signum, frame):
     global is_sigint_up
     is_sigint_up = True
-
 signal.signal(signal.SIGINT, sigint_handler)
-signal.signal(signal.SIGHUP, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
 is_sigint_up = False
 
@@ -49,7 +47,7 @@ class MLPTrainer(object):
             for data, label in self.dataLoader.dataIter(batch_size):
                 with autograd.record():
                     output = self.net(data)
-                    lossv = self.loss(output,label)
+                    lossv = self.loss(output,label) 
                 lossv.backward()
                 self.trainer.step(batch_size)
 
