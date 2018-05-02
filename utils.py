@@ -70,7 +70,8 @@ def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
     if CMLP:
         dataFile = './data/datalabel/CMLP/{0}.txt'
         labelFile = './data/datalabel/CMLP/label.txt'
-    data,_ = pca(normalize(read_data(dataFile.format(labelName))))
+    #data,_ = pca(normalize(read_data(dataFile.format(labelName))))
+    data = normalize(read_data(dataFile.format(labelName)))
     label = read_data(labelFile)
     label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
     label = label > 0
@@ -91,7 +92,7 @@ def loadDataLabel2(rate = 0.8):
     rawdatafile = './data/processed/data.csv'
     with open(rawdatafile,'r') as f:
         rawdata = np.array([[float(a) for a in r.split(',')] for r in f.read().split('\n')])
-    data,_ = pca(normalize(rawdata[:,:55]))
+    data = normalize(rawdata[:,:55])
     label = rawdata[:,55:]
     label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
     label = label > 0
@@ -104,8 +105,22 @@ def loadDataLabel2(rate = 0.8):
     #train_data, _ = pca(normalize(train_data))
     #test_data, _ = pca(normalize(test_data))
     return train_data, train_label, test_data, test_label
-
-
+def loadDataLabel3(rate=0.8):
+    datafile = './data/new_data.json'
+    labelfile = './data/new_label.json'
+    with open(datafile,'r') as f:
+        data = json.load(f)
+    with open(labelfile,'r') as f:
+        label = json.load(f)
+    #data,_ = pca(normalize(np.array(data)))
+    data = normalize(np.array(data))
+    label = np.array(label)
+    train_num = int(rate*len(data))
+    train_data = data[:train_num,:]
+    train_label = label[:train_num]
+    test_data = data[train_num:,:]
+    test_label = label[train_num:]
+    return train_data,train_label, test_data, test_label
 class DataLoader(object):
     
     def __init__(self,data,label):

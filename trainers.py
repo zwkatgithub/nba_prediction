@@ -22,7 +22,7 @@ class MLPTrainer(object):
         self.labelIndex = OutputData.colName().index(labelName)
         self.bn = bn
         self.dropout = dropout
-        self.net = MLP(bn,dropout)
+        self.net = SampleMLP(bn,dropout)
         self.loss = loss
     def initnet(self,lr,wd,opt='adam',init='x'):
         self.lr = lr
@@ -35,7 +35,8 @@ class MLPTrainer(object):
         self.trainer = gluon.Trainer(self.net.collect_params(),
         opt,
         {'learning_rate':self.lr,
-        'wd':self.wd})  
+        'wd':self.wd
+        })  
     def dataload(self,train_data, train_label, test_data, test_label):
         self.train_data = train_data
         self.train_label = train_label
