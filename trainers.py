@@ -31,8 +31,8 @@ class MLPTrainer(object):
         self.net = MLP(bn,dropout)
         self.lr = lr
         self.wd = wd
-        self.net.initialize()
-        #self.net.collect_params().initialize(mx.init.Xavier(magnitude=2.24),ctx=mx.cpu())
+        #self.net.initialize()
+        self.net.collect_params().initialize(mx.init.Xavier(magnitude=3),ctx=mx.cpu())
         self.trainer = gluon.Trainer(self.net.collect_params(),
             'adam',
             {'learning_rate':self.lr,
@@ -78,8 +78,9 @@ class MLPTrainer(object):
         label = nd.array(label)
         #print(output[:,0]-test_label)
         output = self.net(data)
-        loss = nd.sum(nd.abs(output.reshape(label.shape) - label)).asscalar()
-        return loss
+        return nd.sum(self.loss(output,label)).asscalar()
+        #loss = nd.sqrt(2*nd.sum(nd.power(output.reshape(label.shape) - label,2))).asscalar()
+        #return loss
     def predict(self, x):
         x = nd.array(x)
         l = self.net(x)
@@ -146,7 +147,7 @@ if __name__=='__main__':
     # args = parser.parse_args()
     train_data, train_label,_,_ = loadDataLabel('three_pt',all=True)
     print('Start')
-    three_pt = CMLPTrainer('three_pt',gluon.loss.SoftmaxCrossEntropyLoss(),0.00001,0.001,genDictIndex(train_label))
+    three_pt = CMLPTrainer('three_pt',gluon.loss.SoftmaxCrossEntropyLoss(),0.1,0.005,genDictIndex(train_label))
     three_pt.train(1000,256)
     
     # r = input('save params ? (y/n)')
