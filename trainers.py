@@ -16,13 +16,17 @@ is_sigint_up = False
 
 class MLPTrainer(object):
     paramsFloder = './params/MLP'
-    def __init__(self,labelName, loss, bn=False, dropout=None, all=False):
+    def __init__(self,labelName, loss, net='mlp',bn=False, dropout=None, all=False):
         self.all = all
         self.labelName = labelName
         self.labelIndex = OutputData.colName().index(labelName)
         self.bn = bn
         self.dropout = dropout
-        self.net = SampleMLP(bn,dropout)
+        if net == 'mlp':
+            self.net = MLP(bn,dropout)
+        elif net == 'smlp':
+            self.net = SampleMLP(bn,dropout)
+        #self.net = MLP(bn,dropout)
         self.loss = loss
     def initnet(self,lr,wd,opt='adam',init='x'):
         self.lr = lr
@@ -64,12 +68,13 @@ class MLPTrainer(object):
             ptest_loss = self.eval(self.test_data, self.test_label)
             self.test_loss.append(ptest_loss / len(self.test_data))
             self.train_loss.append(ptrain_loss / len(self.train_data))
-            train_acc = self.accuracy(self.train_data,self.train_label)
-            test_acc = self.accuracy(self.test_data, self.test_label)
+            #train_acc = self.accuracy(self.train_data,self.train_label)
+            #test_acc = self.accuracy(self.test_data, self.test_label)
             # train_acc = 0.0
             # test_acc = 0.0
-            print('Epoch %d : Train loss -> %f Test loss -> %f Train acc -> %f Test acc -> %f' % (epoch, self.train_loss[-1], self.test_loss[-1],
-                train_acc, test_acc))
+            #print('Epoch %d : Train loss -> %f Test loss -> %f Train acc -> %f Test acc -> %f' % (epoch, self.train_loss[-1], self.test_loss[-1],
+            #    train_acc, test_acc))
+            print("'Epoch %d : Train loss -> %f Test loss -> %f"  %(epoch,self.train_loss[-1], self.test_loss[-1]))
         p = input('plot ? (y/n)')
         if p.lower() == 'y':
             self.plot()

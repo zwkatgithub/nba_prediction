@@ -14,6 +14,7 @@ parser.add_argument('-bs','--batchsize',type=int)
 #parser.add_argument('-lf','--lossfunction')
 parser.add_argument('-c','--con',type=bool,default=False)
 parser.add_argument('-a','--all',type=bool,default=False)
+parser.add_argument('-n',"--net")
 args = parser.parse_args()
 
 lr = config[args.labelname]['learningrate']
@@ -25,7 +26,7 @@ opt = config[args.labelname]['opt']
 init = config[args.labelname]['init']
 #a,b,c,d = loadDataLabel3()
 #a,b,c,d = loadDataLabel2()
-a,b,c,d = loadDataLabel(args.labelname,rate=0.7,CMLP=True)
+a,b,c,d = loadDataLabel3(args.labelname,rate=0.7)
 print("abcd : ",a.shape,b.shape,c.shape,d.shape)
 trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),bn=bn,dropout=dropout,all=args.all)
 trainer.initnet(lr,wd,opt=opt,init=init)

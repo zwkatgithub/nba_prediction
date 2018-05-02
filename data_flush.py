@@ -31,6 +31,11 @@ def processLabel(h,v):
     h = h['three_pt']*3 + h['ft'] + h['in_pts']
     v = v['three_pt']*3 + v['ft'] + v['in_pts']
     return h > v
+def processLabel2(h,v):
+    r = []
+    for labelname in OutputData.colName():
+        r.append(h[labelname]-v[labelname])
+    return r
 def playerMinus(h,v):
     r = []
     for colName in PlayerData.colName():
@@ -60,11 +65,15 @@ for season in seasons:
         resdata.append(r)
         resdata.append(r2)
         #print(home_label)
-        
-        reslabel.append(float(processLabel(home_label,visit_label)))
-        reslabel.append(float(processLabel(visit_label,home_label)))
+        #reslabel.append(home_label)
+        reslabel.append(processLabel2(home_label,visit_label))
+        reslabel.append(processLabel2(visit_label,home_label))
+indexs = list(range(len(resdata)))
+import numpy as np
+np.random.shuffle(indexs)
+resdata, reslabel = np.array(resdata), np.array(reslabel)
 with open('./data/new_data.json','w') as f:
-    json.dump(resdata,f)
+    json.dump(resdata[indexs].tolist(),f)
 with open('./data/new_label.json','w') as f:
-    json.dump(reslabel,f)  
+    json.dump(reslabel[indexs].tolist(),f)  
 

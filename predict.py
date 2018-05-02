@@ -16,7 +16,7 @@ class Predicter(object):
                 bn=config[labelName]['bn'],
                 dropout=config[labelName]['dropout'],all=self.all)
             self.trainers[labelName].initnet(config[labelName]['learningrate'],config[labelName]['wd'])
-            self.trainers[labelName].dataload(*[nd.array(v) for v in loadDataLabel(labelName,CMLP=True)])
+            self.trainers[labelName].dataload(*[nd.array(v) for v in loadDataLabel3(labelName,rate=0.7,shuffle=True,alllabel=True)])
             print(self.trainers[labelName].train_data.shape)
         self.load()
     def load(self):
@@ -30,14 +30,21 @@ class Predicter(object):
     def predict(self,which='train'):
         label = getattr(self.trainers['three_pt'],'{0}_label'.format(which))
         print('label shape : ',label.shape)
+        label = label[:,OutputData.colName().index('three_pt')]*3 + label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
+        label = label > 0
+        print('label shape : ',label.shape)
         temp = nd.zeros(label.shape)
         for _,trainer in self.trainers.items():
             print(_+' data shape : ',getattr(trainer,which+'_data').shape)
-            temp += trainer.predict(getattr(trainer,which+'_data'))
-            
-        
+            if _ == 'three_pt':
+                temp += trainer.predict(getattr(trainer,which+'_data'))*3
+            else:
+                temp += trainer.predict(getattr(trainer,which+'_data'))
 
-        r = temp > 0.5 #nd.cast(temp == 1,'float32')+ nd.cast(temp == 2,'float32')+nd.cast(temp == 3,'float32')
+        #print("temp shape",temp.shape)
+        #temp = temp[:,OutputData.colName().index("three_pt")]*3 + temp[:,OutputData.colName().index('in_pts')] + temp[:,OutputData.colName().index('ft')]
+        print("temp shape",temp.shape)
+        r = temp > 0.0 #nd.cast(temp == 1,'float32')+ nd.cast(temp == 2,'float32')+nd.cast(temp == 3,'float32')
         res = r == label
         with open('r.txt','w') as f:
             f.write(str(res.asnumpy().tolist()))

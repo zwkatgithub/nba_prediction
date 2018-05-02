@@ -64,19 +64,22 @@ def read_data(dataFile):
     with open(dataFile,'r') as f:
         data = json.load(f)
     return np.array(data)
-def loadDataLabel(labelName, rate = 0.7, all=False, shuffle=False, CMLP=False):
+def loadDataLabel(labelName, rate = 0.7, alllabel=False, shuffle=False, CMLP=False):
     dataFile = './data/datalabel/{0}.txt'
     labelFile = './data/datalabel/label.txt'
     if CMLP:
         dataFile = './data/datalabel/CMLP/{0}.txt'
         labelFile = './data/datalabel/CMLP/label.txt'
-    #data,_ = pca(normalize(read_data(dataFile.format(labelName))))
-    data = normalize(read_data(dataFile.format(labelName)))
+    data,_ = pca(normalize(read_data(dataFile.format(labelName))))
+    #np.random.shuffle(data)
+    #data = normalize(read_data(dataFile.format(labelName)))
     label = read_data(labelFile)
-    label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
-    label = label > 0
-    if all:
-        rate = 1.0
+    #label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
+    #label = label > 0
+    #if all:
+    #    rate = 1.0
+    if alllabel==False:
+        label = label[:,OutputData.colName().index(labelName)]
     train_num = int(len(data) * rate)
     indexs = list(range(0,len(data)))
     if shuffle:
@@ -105,16 +108,21 @@ def loadDataLabel2(rate = 0.8):
     #train_data, _ = pca(normalize(train_data))
     #test_data, _ = pca(normalize(test_data))
     return train_data, train_label, test_data, test_label
-def loadDataLabel3(rate=0.8):
+def loadDataLabel3(labelname,rate=0.8, alllabel=False):
     datafile = './data/new_data.json'
     labelfile = './data/new_label.json'
+    labelindex = OutputData.colName().index(labelname)
     with open(datafile,'r') as f:
         data = json.load(f)
     with open(labelfile,'r') as f:
         label = json.load(f)
-    #data,_ = pca(normalize(np.array(data)))
     data = normalize(np.array(data))
     label = np.array(label)
+    #data,_ = pca(normalize(np.array(data)))
+    if alllabel == False:
+        label = label[:,labelindex]
+    #data = normalize(np.array(data))
+    
     train_num = int(rate*len(data))
     train_data = data[:train_num,:]
     train_label = label[:train_num]

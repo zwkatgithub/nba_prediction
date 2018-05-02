@@ -9,9 +9,9 @@ class SampleMLP(nn.Block):
         self.bn = bn
         self.dropout = dropout
         with self.name_scope():
-            self.dense0 = nn.Dense(128,activation='relu')
-            self.dense1 = nn.Dense(64,activation='relu')
-            self.output = nn.Dense(2)
+            self.dense0 = nn.Dense(128,activation='tanh')
+            self.dense1 = nn.Dense(64,activation='tanh')
+            self.output = nn.Dense(1)
     def forward(self,x):
         return self.output(self.dense1(self.dense0(x)))
 
@@ -25,10 +25,10 @@ class MLP(nn.Block):
 
     def build(self):
         with self.name_scope():
-            self.dense0 = nn.Dense(256,activation='relu')
-            self.dense1 = nn.Dense(128,activation='relu')
-            self.dense2 = nn.Dense(64,activation='relu')
-            self.dense3 = nn.Dense(32,activation='relu')
+            self.dense0 = nn.Dense(256,activation='tanh')
+            self.dense1 = nn.Dense(128,activation='tanh')
+            self.dense2 = nn.Dense(64,activation='tanh')
+            self.dense3 = nn.Dense(32,activation='tanh')
             if self.bn:
                 print(self.bn)
                 self.bn0 = nn.BatchNorm(axis=1)
@@ -40,7 +40,7 @@ class MLP(nn.Block):
                 self.dropout1 = nn.Dropout(self.dropout[1])
                 self.dropout2 = nn.Dropout(self.dropout[2])
                 self.dropout3 = nn.Dropout(self.dropout[3])
-            self.output = nn.Dense(2)
+            self.output = nn.Dense(1)
     def forward(self, data):
         if self.bn and not self.dropout:
             return self.output(self.bn3(self.dense3(self.bn2(self.dense2(self.bn1(self.dense1(self.bn0(self.dense0(data)))))))))
@@ -103,9 +103,12 @@ class RNN(nn.Block):
 
     def forward(self, inputs, state):
         #emb = self.drop(self.encoder(inputs))
+        
         output, state = self.rnn(inputs, state)
         #output = self.drop(output)
+        
         decoded = self.decoder(output.reshape((-1, self.hidden_dim)))
+        #print("inforward",decoded.shape)
         return decoded, state
 
     def begin_state(self, *args, **kwargs):
@@ -117,40 +120,73 @@ def detach(state):
     else:
         state = state.detach()
     return state
+def evals(net, adata ,alabel, batch_size):
+    hidden = net.begin_state(func=mx.nd.zeros,batch_size = batch_size,ctx=mx.cpu())
+    dataLoader = DataLoader(adata, alabel)
+    tl = 0
+    for data, label in dataLoader.dataIter(batch_size):
+        label = nd.array(label)
+        #label = nd.ones(shape=(5,batch_size)) * label
+        #label = label.reshape((-1,))
+        dd = nd.array(data.reshape((batch_size,5,11)).swapaxes(0,1))
+        #hidden = detach(hidden)
+        output,hidden = net(dd, hidden)
+        output = output.reshape((5,batch_size,2))
+        output = nd.sum(output,axis=0)/5
+        lv = loss(output, label)
+
+        tl += nd.sum(lv).asscalar()
+    return tl / len(adata)
+def predict(net, data, label):
+    data = nd.array(data)
+    label = nd.array(label)
+    hidden = net.begin_state(func=mx.nd.zeros,batch_size = data.shape[0],ctx=mx.cpu())
+    dd = nd.array(data.reshape((data.shape[0],5,11)).swapaxes(0,1))
+    output,hidden = net(dd,hidden)
+    output = output.reshape((5,data.shape[0],2))
+    output = nd.sum(output,axis=0)/5
+    l = nd.argmax(output, axis=1)
+    res = nd.mean(l==label)
+    return res.asscalar()
+
 if __name__ == '__main__':
-    from utils import loadDataLabel2, DataLoader
-    a,b,c,d = loadDataLabel2()
-    print(a.shape)
-    rnn = RNN("rnn_relu",11,100,2)
+    from utils import loadDataLabel3, DataLoader
+    a,b,c,d = loadDataLabel3()
+    print(d.shape)
+    rnn = RNN("lstm",11,100,2)
     rnn.collect_params().initialize(mx.init.Xavier())
-    batch_size = 32
-    clipping_norm = 0.2
+    batch_size = 256
+    clipping_norm = 0.1
     num_steps = 5
     loss = mx.gluon.loss.SoftmaxCrossEntropyLoss()
     trainer = mx.gluon.Trainer(rnn.collect_params(),'adam',{
-        'learning_rate':1.0,
-        "wd":0.0
+        'learning_rate':0.005,
+        "wd":0.001
     })
     dataLoader = DataLoader(a,b)
-    for epoch in range(5):
+    for epoch in range(500):
         total_L = 0.0
         hidden = rnn.begin_state(func=mx.nd.zeros,batch_size = batch_size,ctx=mx.cpu())
 
         for data,label in dataLoader.dataIter(batch_size):
             label = nd.array(label)
-            d = nd.array(data.reshape((32,5,11)).swapaxes(0,1))
-            print(d.shape)
+            #label = nd.ones(shape=(5,32)) * label
+            #label = label.reshape((-1,))
+            dd = nd.array(data.reshape((batch_size,5,11)).swapaxes(0,1))
             hidden = detach(hidden)
             with mx.autograd.record():
-                output, hidden = rnn(d,hidden)
+                output, hidden = rnn(dd,hidden)
+                output = output.reshape((5,batch_size,2))
+                output = nd.sum(output,axis=0)/5
                 lv = loss(output,label)
                 lv.backward()
             grads = [i.grad() for i in rnn.collect_params().values()]
             mx.gluon.utils.clip_global_norm(grads,clipping_norm*num_steps*batch_size)
             trainer.step(batch_size)
             total_L += mx.nd.sum(lv).asscalar()
+        test_loss = evals(rnn,c,d,batch_size)
 
-        print("Epoch %d loss %.2f " %(epoch, total_L))
+        print("Epoch %d loss %.4f test loss %.4f train acc %.4f test acc %.4f" %(epoch, total_L/len(a), test_loss,predict(rnn,a,b),predict(rnn,c,d)))
 
             
         

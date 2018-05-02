@@ -17,6 +17,7 @@ def dataAnalysis(labelIndex,nSteps = 350, stepSize = 0.005,dataFile='./data/proc
 
     xList = []
     labels = []
+    
     for row in data:
         xList.append(row[:-9])
         labels.append(row[labelIndex])
@@ -126,13 +127,13 @@ class DataLabel(object):
     def createData(self, labelName):
         inputData = []
         labelIndex = OutputData.colName().index(labelName)
-        data = self.data.reshape((-1,5,11))
-        for row in data:
+        #data = self.data.reshape((-1,5,11))
+        for row in self.data:
             #m = np.sum(self.mask[labelIndex],axis=0)
-            m = self.mask[labelIndex]
-            r = row[m!=0].reshape((-1,))
+            #m = self.mask[labelIndex]
+            #r = row[m!=0].reshape((-1,))
             
-            inputData.append(r.tolist())
+            inputData.append(row)
         self.inputData = np.array(inputData)
     def save(self,datafile):
         if not os.path.exists(os.path.dirname(datafile)):
