@@ -12,6 +12,7 @@ def connDatabase():
 class PlayerData:
     __colName = ['fg_pct','three_pt_pct','fta','oreb_pct',
         'dreb_pct','ast_pct','tov','stl','blk','pf','p_m']
+    #__colName = ['oreb_pct','dreb_pct','ast_pct','fta','p_m']
     def __init__(self, kwargs):
         self.player_id = kwargs['player_id']
         self.season = kwargs['season']
