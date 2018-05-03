@@ -26,9 +26,9 @@ class MLP(nn.Block):
     def build(self):
         with self.name_scope():
             self.dense0 = nn.Dense(256,activation='tanh')
-            self.dense1 = nn.Dense(128,activation='tanh')
-            self.dense2 = nn.Dense(64,activation='tanh')
-            self.dense3 = nn.Dense(32,activation='tanh')
+            self.dense1 = nn.Dense(256,activation='tanh')
+            self.dense2 = nn.Dense(256,activation='tanh')
+            self.dense3 = nn.Dense(256,activation='tanh')
             if self.bn:
                 print(self.bn)
                 self.bn0 = nn.BatchNorm(axis=1)
