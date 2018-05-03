@@ -14,7 +14,7 @@ parser.add_argument('-bs','--batchsize',type=int)
 #parser.add_argument('-lf','--lossfunction')
 parser.add_argument('-c','--con',type=bool,default=False)
 parser.add_argument('-a','--all',type=bool,default=False)
-parser.add_argument('-n',"--net")
+
 args = parser.parse_args()
 
 lr = config[args.labelname]['learningrate']
@@ -24,11 +24,12 @@ dropout = config[args.labelname]['dropout']
 bn = config[args.labelname]['bn']
 opt = config[args.labelname]['opt']
 init = config[args.labelname]['init']
+net = config[args.labelname]['net']
 #a,b,c,d = loadDataLabel3()
 #a,b,c,d = loadDataLabel2()
 a,b,c,d = loadDataLabel3(args.labelname,rate=0.7)
 print("abcd : ",a.shape,b.shape,c.shape,d.shape)
-trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),bn=bn,dropout=dropout,all=args.all)
+trainer = MLPTrainer(args.labelname, selectLoss(lossfunc),net=net,bn=bn,dropout=dropout,all=args.all)
 trainer.initnet(lr,wd,opt=opt,init=init)
 trainer.dataload(nd.array(a),nd.array(b),nd.array(c),nd.array(d))
 trainer.train(args.epoch,args.batchsize,con=args.con,ctx=mx.cpu())

@@ -70,9 +70,9 @@ def loadDataLabel(labelName, rate = 0.7, alllabel=False, shuffle=False, CMLP=Fal
     if CMLP:
         dataFile = './data/datalabel/CMLP/{0}.txt'
         labelFile = './data/datalabel/CMLP/label.txt'
-    data,_ = pca(normalize(read_data(dataFile.format(labelName))))
+    #data,_ = pca(normalize(read_data(dataFile.format(labelName))))
     #np.random.shuffle(data)
-    #data = normalize(read_data(dataFile.format(labelName)))
+    data = normalize(read_data(dataFile.format(labelName)))
     label = read_data(labelFile)
     #label = label[:,OutputData.colName().index('three_pt')]*3+ label[:,OutputData.colName().index('ft')]+label[:,OutputData.colName().index('in_pts')]
     #label = label > 0

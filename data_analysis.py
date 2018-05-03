@@ -119,6 +119,7 @@ class DataLabel(object):
         with open(self.rawDataFile,'r') as f:
             rawData = [[float(v) for v in line.strip().split(',')] for line in f.read().strip().split('\n')]
         self.rawData = np.array(rawData)
+        np.random.shuffle(self.rawData)
         self.data = self.rawData[:,:55]
     def saveLabel(self, labelFile):
         label = self.rawData[:,-9:]
@@ -127,13 +128,13 @@ class DataLabel(object):
     def createData(self, labelName):
         inputData = []
         labelIndex = OutputData.colName().index(labelName)
-        #data = self.data.reshape((-1,5,11))
-        for row in self.data:
-            #m = np.sum(self.mask[labelIndex],axis=0)
-            #m = self.mask[labelIndex]
-            #r = row[m!=0].reshape((-1,))
+        data = self.data.reshape((-1,5,11))
+        for row in data:
+            m = np.sum(self.mask[labelIndex],axis=0)
+            m = self.mask[labelIndex]
+            r = row[m!=0].reshape((-1,))
             
-            inputData.append(row)
+            inputData.append(r.tolist())
         self.inputData = np.array(inputData)
     def save(self,datafile):
         if not os.path.exists(os.path.dirname(datafile)):
