@@ -6,6 +6,7 @@ from mxnet import nd, gluon, autograd
 import os
 import matplotlib.pyplot as plt
 import signal
+import csv
 
 def sigint_handler(signum, frame):
     global is_sigint_up
@@ -105,6 +106,14 @@ class MLPTrainer(object):
         #print('x : ',x.shape)
         return l.argmax(axis=1)
     def save(self):
+        loss_folder = "./loss"
+        if not os.path.exists(loss_folder):
+            os.makedirs(loss_folder)
+        
+        with open(os.path.join(loss_folder,self.labelName+str(self.lr)+'txt'),'w',newline="") as f:
+            writer = csv.writer(f)
+            #print(self.train_loss)
+            writer.writerows([self.train_loss,self.test_loss])
         name = self.labelName+str(self.lr)+'.txt'
         paramsFile = os.path.join(self.paramsFloder,name)
         self.net.save_params(paramsFile)

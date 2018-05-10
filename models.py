@@ -9,11 +9,15 @@ class SampleMLP(nn.Block):
         self.bn = bn
         self.dropout = dropout
         with self.name_scope():
+            self.conv = nn.Conv1D(channels=5,kernel_size=3)
+            self.flatten = nn.Flatten()
             self.dense0 = nn.Dense(128,activation='tanh')
             self.dense1 = nn.Dense(64,activation='tanh')
+            self.dense2 = nn.Dense(32,activation='tanh')
             self.output = nn.Dense(1)
     def forward(self,x):
-        return self.output(self.dense1(self.dense0(x)))
+        x = self.flatten(self.conv(x.reshape(shape=(-1,5,11))))
+        return self.output(self.dense2(self.dense1(self.dense0(x))))
 
 class MLP(nn.Block):
     def __init__(self, bn=False, dropout=None,**kwargs):
@@ -28,10 +32,10 @@ class MLP(nn.Block):
             self.conv = nn.Conv1D(channels=5,kernel_size=3)
             #self.mp = nn.MaxPool1D(pool_size=2)
             self.flatten = nn.Flatten()
-            self.dense0 = nn.Dense(256,activation='tanh')
-            self.dense1 = nn.Dense(256,activation='tanh')
-            self.dense2 = nn.Dense(256,activation='tanh')
-            self.dense3 = nn.Dense(256,activation='tanh')
+            self.dense0 = nn.Dense(128,activation='tanh')
+            self.dense1 = nn.Dense(64,activation='tanh')
+            self.dense2 = nn.Dense(32,activation='tanh')
+            self.dense3 = nn.Dense(16,activation='tanh')
             if self.bn:
                 print(self.bn)
                 self.bn0 = nn.BatchNorm(axis=1)
