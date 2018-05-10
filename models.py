@@ -25,6 +25,9 @@ class MLP(nn.Block):
 
     def build(self):
         with self.name_scope():
+            self.conv = nn.Conv1D(channels=5,kernel_size=3)
+            #self.mp = nn.MaxPool1D(pool_size=2)
+            self.flatten = nn.Flatten()
             self.dense0 = nn.Dense(256,activation='tanh')
             self.dense1 = nn.Dense(256,activation='tanh')
             self.dense2 = nn.Dense(256,activation='tanh')
@@ -42,6 +45,9 @@ class MLP(nn.Block):
                 self.dropout3 = nn.Dropout(self.dropout[3])
             self.output = nn.Dense(1)
     def forward(self, data):
+        #data input shape : n*55
+        #data this shape : n*5*11
+        data = self.flatten(self.conv(data.reshape(shape=(-1,5,11))))
         if self.bn and not self.dropout:
             return self.output(self.bn3(self.dense3(self.bn2(self.dense2(self.bn1(self.dense1(self.bn0(self.dense0(data)))))))))
         elif not self.bn and self.dropout:
