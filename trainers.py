@@ -7,6 +7,7 @@ import os
 import matplotlib.pyplot as plt
 import signal
 import csv
+import time
 
 def sigint_handler(signum, frame):
     global is_sigint_up
@@ -53,6 +54,7 @@ class MLPTrainer(object):
         self.test_loss = []
         if con:
             self.load(ctx=ctx)
+        t1 = time.time()
         for epoch in range(epochs):
             train_loss = 0.0
             if is_sigint_up:
@@ -76,6 +78,8 @@ class MLPTrainer(object):
             #print('Epoch %d : Train loss -> %f Test loss -> %f Train acc -> %f Test acc -> %f' % (epoch, self.train_loss[-1], self.test_loss[-1],
             #    train_acc, test_acc))
             print("'Epoch %d : Train loss -> %f Test loss -> %f"  %(epoch,self.train_loss[-1], self.test_loss[-1]))
+        t2 = time.time()
+        print("Time : ",(t2-t1)/epochs)
         p = input('plot ? (y/n)')
         if p.lower() == 'y':
             self.plot()
@@ -142,8 +146,9 @@ class CMLPTrainer(object):
             'wd':self.wd
         })
     def train(self,epochs,batch_size):
-        
+        t1 = time.time()
         for epoch in range(epochs):
+            
             train_acc = 0.0
             train_loss = 0.0
             test_acc = 0.0
@@ -157,8 +162,11 @@ class CMLPTrainer(object):
                 train_loss += nd.sum(loss).asscalar()
             train_acc = self.accuracy(self.train_data, self.train_label)
             test_acc = self.accuracy(self.test_data, self.test_label)
+            
             print('Epoch %d : Train loss -> %f Train acc -> %f Test acc -> %f' %
                 (epoch, train_loss/len(self.train_data), train_acc, test_acc))
+        t2 = time.time()
+        print("Time : ",(t2-t1)/epochs)
     def accuracy(self, data, label):
         l = nd.array([self.dict[ll.asscalar()] for ll in label])
         output = self.net(data)

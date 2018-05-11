@@ -72,8 +72,8 @@ indexs = list(range(len(resdata)))
 import numpy as np
 np.random.shuffle(indexs)
 resdata, reslabel = np.array(resdata), np.array(reslabel)
-with open('./data/new_data.json','w') as f:
+with open('./data/new_data1.json','w') as f:
     json.dump(resdata[indexs].tolist(),f)
-with open('./data/new_label.json','w') as f:
+with open('./data/new_label1.json','w') as f:
     json.dump(reslabel[indexs].tolist(),f)  
 
